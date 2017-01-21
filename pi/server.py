@@ -5,11 +5,8 @@ from base64 import b64encode
 def take_screenshot():
     print("taking screenshot")
     call(["raspistill", "-o", "capture.jpg", "-w", "320", "-h", "240", "-n", "-t", "1"])
-    f = open("capture.jpg", "r")
-    b64 = b64encode(f.read())
-    f.close()
-    print(b64)
-    return b64
+    with open("capture.jpg", "r") as f:
+        return b64encode(f.read())
 
 def move_motor(which_motor, num_steps):
     # TODO
