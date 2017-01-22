@@ -4,6 +4,7 @@ from base64 import b64encode
 import RPi.GPIO as GPIO
 from motor import Motor
 import subprocess
+import sys
 
 suction_pin = 26
 
@@ -28,28 +29,27 @@ def toggle_suction(enable):
     return "done"
 
 def reply(uart, response):
-    uart.write(str(response) + "\n")
+    print(str(response))
+    # uart.write(str(response) + "\n")
 
-with open("/dev/ttyAMA0", "r+w") as uart:
-    subprocess.call(["stty", "-F", "/dev/ttyAMA0", "115200"])
-    while True:
-        query = uart.readline()
-        if query.endswith("\n"):
-            query = query[:-1]
-        else:
-            reply(uart, "parse error")
-            continue
-
-        parsed = query.split(",")
-        if query == "img":
-            take_screenshot()
-            reply(uart, "capture.jpg")
-        elif len(parsed) == 3 and parsed[0] == "motor":
-            which_motor = int(parsed[1])
-            dest_angle = int(parsed[2])
-            reply(uart, move_motor(which_motor, dest_angle))
-        elif len(parsed) == 2 and parsed[0] == "suction":
-            enable = int(parsed[1])
-            reply(uart, toggle_suction(enable))
-        else:
-            reply(uart, "parse error")
+# with open("/dev/ttyAMA0", "r+w") as uart:
+#     subprocess.call(["stty", "-F", "/dev/ttyAMA0", "115200"])
+#     while True:
+#         query = uart.readline()
+# for query in sys.stdin:
+while True:
+    query = raw_input("> ")
+    uart = None
+    parsed = query.split(",")
+    if query == "img":
+        take_screenshot()
+        reply(uart, "capture.jpg")
+    elif len(parsed) == 3 and parsed[0] == "motor":
+        which_motor = int(parsed[1])
+        dest_angle = int(parsed[2])
+        reply(uart, move_motor(which_motor, dest_angle))
+    elif len(parsed) == 2 and parsed[0] == "suction":
+        enable = int(parsed[1])
+        reply(uart, toggle_suction(enable))
+    else:
+        reply(uart, "parse error")
