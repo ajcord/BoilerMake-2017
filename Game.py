@@ -2,7 +2,6 @@ import random
 from copy import deepcopy
 from socket import *
 import time
-from daniel import *
 
 SING_SCORE = 1
 DUB_SCORE = 3
@@ -43,7 +42,7 @@ class GameState(object):
 		self.cards = []
 		self.sock = socket(AF_INET, SOCK_STREAM)
 		self.sock.connect(("cardshark.local", 8000))
-		self.sock.sendall("suction,1")
+		#self.sock.sendall("suction,1")
 
 	def indices_to_tuple(self, t_of_ind):
 		return self.cards.index(t_of_ind)
@@ -128,7 +127,8 @@ class GameState(object):
 							combos.append((i,j,k,l))
 		return combos
 
-	def add_card(self, card):
+	def add_card(self):
+		card = enter_card()
 		self.cards.append(card)
 
 	#Singles remaining
@@ -226,12 +226,10 @@ class GameState(object):
 		else:
 			sad_mofo = c[0][0]
 
-		# MOVE SAD_MOFO TO PILE
-		# MOVE CARD 11 TO POSITION SAD_MOFO
-
 		self.cards[sad_mofo] = self.cards[-1]
 		del self.cards[-1]
 		print "Removed index ", sad_mofo
+		return sad_mofo
 
 	# Returns boolean on whether to pick up the card 
 	def take_card(self, new_card):
@@ -246,12 +244,35 @@ class GameState(object):
 		return False
 
 	def turn(self):
-		self.grab_card(-2)
-		self.
-
+		print self.cards
+		self.grab_card(-1)
+		self.flip_card()
+		card_possible = self.request_pic()
+		print "I am looking at a ", card_possible
 		if self.take_card(card_possible):
-			self.remove_card()
+			#Release into switch pile
+			r = self.remove_card()
+			if r % 2 == 0:
+				self.leggo_card(-3)
+				self.grab_card(r)
+				self.leggo_card(-1)
+				self.grab_card(-3)
+				self.leggo_card(r)
+			else:
+				self.leggo_card(-1)
+				self.grab_card(r)
+				self.leggo_card(-3)
+				self.grab_card(-1)
+				self.leggo_card(-3)
+				self.grab_card(r)
+				self.leggo_card(-1)
+				self.grab_card(-3)
+				self.leggo_card(r)
+				self.grab_card(-3)
+				self.leggo_card(r)
 		else:
+			
+			self.grab_card(-2)
 			new_card = draw_card()
 			self.remove_card()
 		print "TURN "
@@ -278,7 +299,7 @@ class GameState(object):
 		if val == -4:
 			return CAMARA_POS
 
-	# MOVEMENT FUNCTIONALITY
+	# MOVEMENT FUNCTIONALITY: ODD CARD ALWAYS ON BOTTOM
 	def grab_card(self, num):
 		post = find_pos_of_card(num)
 		self.sock.sendall("motor,1," + MOTOR_1_MOVE)
@@ -294,29 +315,22 @@ class GameState(object):
 		self.sock.sendall("motor,1," + MOTOR_1_LEGGO)
 		self.sock.sendall("motor,2," + MOTOR_2_LEGGO)
 		self.sock.sendall("suction,0")
-		self.sock.sendall("suction,1")
+		#self.sock.sendall("suction,1")
 		return 0
 
-	#Flip into discard, then pick up
-	def flip_card(self):
-		
-		self.sock.sendall("motor,0," + MOTOR_0_LEGGO)
-		self.sock.sendall("motor,1," + MOTOR_1_LEGGO)
-		self.sock.sendall("motor,2," + MOTOR_2_LEGGO)
+	#Flip into switch, then pick up, assuming you are holding one already
+	def flip_card(self):	
+		self.sock.sendall("motor,1," + MOTOR_1_MOVE)
+		self.sock.sendall("motor,0," + MOTOR_0_FLIP)
+		self.sock.sendall("motor,1," + MOTOR_1_FLIP)
+		self.sock.sendall("motor,2," + MOTOR_2_FLIP)
 		self.sock.sendall("suction,0")
-		self.sock.sendall("motor,2,0")
-		self.sock.sendall("motor,0," + post)
-		self.sock.sendall("motor,1," + MOTOR_1_LEGGO)
-		self.sock.sendall("motor,2," + MOTOR_2_GRAB)
-		post = find_pos_of_card(-2)
+		#self.sock.sendall("suction,1")
+		self.grab_card(-3)
 		return 0
 
-	# Move card to discard
-	def discard_card(self, num):
-		return 0
-
-	def move_to_switch(self):
-		return 0
+	def enter_card():
+		return input("Card (1-52): ")
 
 	# Returns numerical value of new card
 	def request_pic(self):
@@ -328,12 +342,17 @@ class GameState(object):
 		self.sock.sendall("img\r\n")
 		time.sleep(1)
 		ret = self.sock.recv(1048576)
-		return discover_card(ret)
+		return enter_card(ret)
 
 
 
 from msvcrt import getch
 gs = GameState()
+
+for a in range(10):
+	gs.add_card()
+
+gs.turn()
 
 
 	
