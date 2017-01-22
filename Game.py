@@ -2,6 +2,7 @@ import random
 from copy import deepcopy
 from socket import *
 import time
+from daniel import *
 
 SING_SCORE = 1
 DUB_SCORE = 3
@@ -127,8 +128,7 @@ class GameState(object):
 							combos.append((i,j,k,l))
 		return combos
 
-	def add_card(self):
-		card = enter_card()
+	def add_card(self, card):
 		self.cards.append(card)
 
 	#Singles remaining
@@ -251,6 +251,7 @@ class GameState(object):
 		print "I am looking at a ", card_possible
 		if self.take_card(card_possible):
 			#Release into switch pile
+			self.add_card(card_possible)
 			r = self.remove_card()
 			if r % 2 == 0:
 				self.leggo_card(-3)
@@ -273,7 +274,7 @@ class GameState(object):
 		else:
 			
 			self.grab_card(-2)
-			new_card = draw_card()
+			new_card = request_pic()
 			self.remove_card()
 		print "TURN "
 		print self.cards
@@ -329,8 +330,6 @@ class GameState(object):
 		self.grab_card(-3)
 		return 0
 
-	def enter_card():
-		return input("Card (1-52): ")
 
 	# Returns numerical value of new card
 	def request_pic(self):
@@ -342,15 +341,12 @@ class GameState(object):
 		self.sock.sendall("img\r\n")
 		time.sleep(1)
 		ret = self.sock.recv(1048576)
-		return enter_card(ret)
+		return discover_card(ret)
 
 
 
 from msvcrt import getch
 gs = GameState()
-
-for a in range(10):
-	gs.add_card()
 
 gs.turn()
 
