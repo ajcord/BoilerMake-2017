@@ -53,12 +53,16 @@ def resize_contour(cont):
     csecond = map(lambda x:x[1],c)
     cm = min(cfirst)
     cm2 = min(csecond)
-    csecondmax = 150./(max(csecond) - cm2)
-    cfirstmax = 200./(max(cfirst) - cm)
+    csecondmax = 150./(max(csecond) - cm2 + .0001)
+    cfirstmax = 200./(max(cfirst) - cm + .0001 )
     
     c = map(lambda x : (round((x[0] - cm) * cfirstmax,1), round((x[1]- cm2) * csecondmax,1)), c)
     return c
 
+# Will return the card with the following values:
+# SUITS: 0- Hearts, 13- Spades, 26 - Clubs, 39 - Diamonds
+# NUMBER: 1 - Ace, 11 Jack, 12 Queen, 13 King, all else number on card
+# Total returned: SUITS + NUMBER
 def discover_card(img):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(1,1),1000)
@@ -70,9 +74,11 @@ def discover_card(img):
     contours = sorted(contours, key=cv2.contourArea,reverse=True)[:18]
     
     suit_mins = [100000, 100000, 100000, 100000]
+    num_mins = [100000 for n in nums]
     count = 0
     contours = [resize_contour(contour) for contour in contours]
     for c in contours:
+        is_suit = False
         for i in range(len(suits)):
             val = subset_points(c, suits[i])
             if val < suit_mins[i]:
@@ -81,41 +87,14 @@ def discover_card(img):
                 suit_mins[i] = val
             if val < 500:
                 count += 1
+                is_suit = True
+        if not is_suit:
+            for i in range(len(nums)):
+                val = subset_points(c, nums[i])
+                if val < num_mins[i]:
+                    num_mins[i] = val
 
-    
-    search_space = []
-    # We will suppose that the card is an 8, 9, or 10
-    if count > 10:
-        search_space = [n8, n9, n0]
-    # Either a two or a face card
-    if count <= 4:
-        search_space = [n2, nj, nq, nk, nA]
-
-    if search_space:
-        search_mins = [100000, 100000, 100000, 100000, 100000]
-        for c in contours:
-            # Repeat, refactor TODO
-            for i in range(len(search_mins)):
-                val = subset_points(c, search_space[i])
-                if val < search_mins[i]:
-                    search_mins[i] = val
-        print search_mins
-        number = search_mins.index(min(search_mins))
-        if count > 9:
-            number += 8
-        else:
-            if number == 0:
-                number = 2
-            elif number == 1:
-                number = "J"
-            elif number == 2:
-                number = "Q"
-            elif number == 3:
-                number = "K"
-            elif number == 4:
-                number = "A"
-    elif count > 4:
-        number = count - 2
+    number = num_mins.index(min(num_mins)) + 1
                 
     min_ind = suit_mins.index(min(suit_mins))
 
@@ -128,13 +107,22 @@ def discover_card(img):
     if min_ind == 3:
         print "It's a " + str(number) + " of diamonds!"
     
+    return min_ind * 14 + number
+
+    '''
 import time
 t = time.time()
-#cards = ["2S.jpg", "3C.jpg", "5H.jpg", "6S.jpg", "7S.jpg", "8D.jpg", "9C.jpg", "9D.jpg", "9S.jpg", "10H.jpg"]
-hard_cards = ["KC.jpg", "AS.jpg", "QD.jpg"]
-#cards = ["2S.jpg"]
-for card in hard_cards:
+cards = []
+letters = ["h", "S", "C", "D"]
+for letter in letters:
+    for i in range(1,14):
+        cards.append("CardPics\\" + letter + str(i) + "\\" + letter + str(i) + "-1.png")
+
+cards = ["CardPics\\S1\\S1-1.png"]
+#cards = ["9C.jpg", "9D.jpg", "9S.jpg"]
+for card in cards:
     image = cv2.imread(card)
     plt.imshow(image)
     discover_card(image)
 print time.time() - t
+    '''
