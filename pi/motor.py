@@ -30,6 +30,7 @@ class Motor(object):
         self.deg_per_step = 5.625 / 64  # for half-step drive (mode 3)
         self.steps_per_rev = int(360 / self.deg_per_step)  # 4096
         self.step_angle = 0  # Assume the way it is pointing is zero degrees
+        self.curr_angle = 0
         for p in pins:
             GPIO.setup(p, GPIO.OUT)
             GPIO.output(p, 0)
@@ -64,6 +65,7 @@ class Motor(object):
             else:
                 self._move_cw_3(steps / 8)
         self.step_angle = target_step_angle
+        self.curr_angle = angle
 
     def __clear(self):
         GPIO.output(self.P1, 0)
