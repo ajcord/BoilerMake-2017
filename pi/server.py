@@ -8,7 +8,7 @@ suction_pin = 26
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(suction_pin, GPIO.OUT)
-motors = [Motor([3,5,7,8]), Motor([11,13,15,16]), Motor([19,21,23,24])]
+motors = [Motor([3,5,7,12]), Motor([11,13,15,16]), Motor([19,21,23,24])]
 for m in motors:
     m.rpm = 5
 
